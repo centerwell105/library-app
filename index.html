@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>共用文庫</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap');
+:root {
+  --ink:#1c1712; --paper:#f7f2e8; --paper2:#ede6d5;
+  --red:#9b2335; --red-light:#c23a4a;
+  --muted:#7a6e5e; --border:#c8bca8;
+  --success:#2d6a4f; --warn:#c67c2a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Zen Kaku Gothic New',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6;}
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* LOGIN */
+#loginScreen{background:var(--ink);align-items:center;justify-content:center;padding:40px 24px;position:relative;overflow:hidden;}
+#loginScreen::before{content:'文';position:absolute;font-family:'Shippori Mincho',serif;font-size:400px;color:rgba(255,255,255,0.03);right:-80px;top:-80px;line-height:1;pointer-events:none;}
+.login-inner{width:100%;max-width:360px;position:relative;z-index:1;}
+.login-logo{font-family:'Shippori Mincho',serif;font-size:36px;font-weight:800;color:var(--paper);letter-spacing:.3em;text-align:center;margin-bottom:4px;}
+.login-sub{text-align:center;font-size:10px;color:#6b5e4e;letter-spacing:.4em;text-transform:uppercase;margin-bottom:48px;}
+.login-card{background:var(--paper);border-radius:4px;padding:32px 28px;}
+.login-card h2{font-family:'Shippori Mincho',serif;font-size:16px;font-weight:600;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.form-group{margin-bottom:16px;}
+label{display:block;font-size:10px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-bottom:6px;}
+input,select,textarea{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:3px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:14px;color:var(--ink);background:white;outline:none;transition:border-color .2s;-webkit-appearance:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--red);}
+.btn{display:block;width:100%;padding:13px;border:none;border-radius:3px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;text-align:center;letter-spacing:.1em;}
+.btn-primary{background:var(--red);color:white;margin-top:8px;}
+.btn-primary:hover{background:var(--red-light);}
+.btn-secondary{background:none;border:1px solid var(--border);color:var(--ink);margin-top:8px;}
+.btn-secondary:hover{background:var(--paper2);}
+.btn-sm{display:inline-block;width:auto;padding:4px 10px;font-size:11px;margin-top:0;white-space:nowrap;}
+.btn-danger-sm{display:inline-block;width:auto;padding:4px 10px;font-size:11px;margin-top:0;background:#c0392b;color:white;border:none;border-radius:3px;cursor:pointer;}
+.btn-success-sm{display:inline-block;width:auto;padding:4px 10px;font-size:11px;margin-top:0;background:var(--success);color:white;border:none;border-radius:3px;cursor:pointer;}
+
+/* HEADER */
+.app-header{background:var(--paper);border-bottom:1px solid var(--border);padding:0 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:100;min-height:52px;gap:8px;}
+.header-left{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.header-title{font-family:'Shippori Mincho',serif;font-size:17px;font-weight:600;letter-spacing:.2em;color:var(--ink);}
+.header-due{font-size:10px;color:var(--muted);background:var(--paper2);border:1px solid var(--border);padding:3px 8px;border-radius:3px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.header-user{font-size:11px;color:var(--ink);cursor:pointer;padding:5px 10px;border:1px solid var(--border);border-radius:3px;flex-shrink:0;transition:background .2s;}
+.header-user:hover{background:var(--paper2);}
+
+/* NAV */
+.app-nav{display:flex;background:var(--paper2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.nav-btn{flex:1;padding:11px 4px;background:none;border:none;border-bottom:2px solid transparent;font-family:'Zen Kaku Gothic New',sans-serif;font-size:11px;color:var(--muted);cursor:pointer;transition:all .2s;letter-spacing:.03em;position:relative;}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);font-weight:500;}
+.nav-badge{position:absolute;top:4px;right:6px;background:var(--red);color:white;border-radius:50%;width:15px;height:15px;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;}
+
+.content{flex:1;overflow-y:auto;}
+.tab{display:none;padding:14px;}
+.tab.active{display:block;}
+#tab-adminchat,#tab-contact{padding:0;}
+#tab-admincatalog{padding:14px;}
+
+/* CARD */
+.card{background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:12px;overflow:hidden;}
+.card-body{padding:14px;}
+.section-label{font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px;}
+
+/* CATALOG */
+.catalog-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--paper2);transition:background .15s;}
+.catalog-item:last-child{border-bottom:none;}
+.catalog-item:hover{background:var(--paper);}
+.catalog-spine{width:3px;height:32px;border-radius:2px;flex-shrink:0;}
+.catalog-title{font-family:'Shippori Mincho',serif;font-size:13px;font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.catalog-author{font-size:11px;color:var(--muted);flex-shrink:0;}
+
+/* BADGE */
+.badge{display:inline-block;padding:2px 7px;border-radius:2px;font-size:10px;font-weight:500;flex-shrink:0;}
+.badge-available{background:#e8f5ee;color:var(--success);}
+.badge-borrowed{background:#fef3e2;color:var(--warn);}
+.badge-overdue{background:#fdecea;color:#c0392b;}
+.badge-stopped{background:#fdecea;color:#c0392b;}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.stat-box{background:white;border:1px solid var(--border);border-radius:4px;padding:12px 8px;text-align:center;}
+.stat-num{font-family:'Shippori Mincho',serif;font-size:26px;font-weight:800;color:var(--red);line-height:1;margin-bottom:4px;}
+.stat-label{font-size:10px;color:var(--muted);}
+
+/* PROGRESS */
+.progress-wrap{height:3px;background:var(--paper2);border-radius:2px;margin-top:6px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:2px;}
+.progress-ok{background:var(--success);}
+.progress-warn{background:var(--warn);}
+.progress-danger{background:#c0392b;}
+
+/* ALERT */
+.alert{padding:10px 12px;border-radius:3px;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.alert-warn{background:#fef3e2;color:var(--warn);border:1px solid #f5d99a;}
+.alert-danger{background:#fdecea;color:#c0392b;border:1px solid #f5c6c3;}
+.alert-success{background:#e8f5ee;color:var(--success);border:1px solid #a8d5bc;}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-wrap input{padding-left:36px;}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none;}
+
+/* ISBN */
+.isbn-area{background:var(--ink);border-radius:8px;padding:24px 16px;text-align:center;margin-bottom:14px;}
+.barcode-icon{display:flex;justify-content:center;gap:2px;margin-bottom:12px;}
+.barcode-icon span{display:inline-block;width:3px;background:var(--paper);opacity:.8;border-radius:1px;animation:barAnim 1.2s ease-in-out infinite alternate;}
+.barcode-icon span:nth-child(odd){height:36px;}
+.barcode-icon span:nth-child(even){height:24px;}
+.barcode-icon span:nth-child(3n){height:44px;opacity:.6;}
+@keyframes barAnim{from{opacity:.4;}to{opacity:1;}}
+.isbn-label{color:var(--paper);font-size:12px;letter-spacing:.1em;margin-bottom:4px;}
+.isbn-sublabel{color:#6b5e4e;font-size:10px;}
+
+/* LOG TABLE */
+.log-table{width:100%;border-collapse:collapse;font-size:11px;}
+.log-table th{background:var(--ink);color:var(--paper);padding:7px 8px;text-align:left;font-weight:500;font-size:10px;}
+.log-table td{padding:7px 8px;border-bottom:1px solid var(--paper2);vertical-align:middle;}
+.log-table tr:last-child td{border-bottom:none;}
+.log-table tr:hover td{background:var(--paper);}
+
+/* MY BOOKS */
+.mybook-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--paper2);}
+.mybook-item:last-child{border-bottom:none;}
+.mybook-spine{width:3px;height:40px;border-radius:2px;flex-shrink:0;}
+.mybook-info{flex:1;min-width:0;}
+.mybook-title{font-family:'Shippori Mincho',serif;font-size:13px;font-weight:600;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mybook-due{font-size:11px;color:var(--muted);}
+
+/* USER ROW */
+.user-row{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--paper2);cursor:pointer;transition:background .15s;}
+.user-row:last-child{border-bottom:none;}
+.user-row:hover{background:var(--paper);}
+.user-row-info{flex:1;min-width:0;}
+.user-row-name{font-size:13px;font-weight:500;}
+.user-row-sub{font-size:11px;color:var(--muted);}
+.user-row-right{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+
+/* HISTORY PANEL */
+.history-panel{padding:14px;}
+.history-back{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin-bottom:14px;}
+.history-back:hover{color:var(--ink);}
+
+/* CHAT */
+.chat-outer{display:flex;flex-direction:column;height:calc(100vh - 105px);}
+.chat-header{padding:10px 14px;border-bottom:1px solid var(--border);background:white;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.chat-back{cursor:pointer;color:var(--muted);font-size:16px;}
+.chat-messages{flex:1;overflow-y:auto;padding:14px 14px 8px;display:flex;flex-direction:column;gap:10px;background:var(--paper);}
+.chat-bubble-wrap{display:flex;flex-direction:column;}
+.chat-bubble-wrap.admin{align-items:flex-end;}
+.chat-bubble-wrap.user{align-items:flex-start;}
+.chat-bubble{max-width:80%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;}
+.chat-bubble-wrap.admin .chat-bubble{background:var(--ink);color:var(--paper);border-bottom-right-radius:3px;}
+.chat-bubble-wrap.user .chat-bubble{background:white;color:var(--ink);border:1px solid var(--border);border-bottom-left-radius:3px;}
+.chat-time{font-size:10px;color:var(--muted);margin-top:3px;padding:0 2px;}
+.chat-footer{padding:10px 14px;background:white;border-top:1px solid var(--border);display:flex;gap:8px;align-items:flex-end;flex-shrink:0;}
+.chat-footer textarea{flex:1;resize:none;min-height:40px;max-height:100px;padding:9px 12px;font-size:13px;border-radius:20px;border:1px solid var(--border);}
+.chat-send{width:40px;height:40px;border-radius:50%;background:var(--red);color:white;border:none;cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.chat-send:hover{background:var(--red-light);}
+.msg-template-wrap{padding:8px 14px;background:white;border-top:1px solid var(--border);flex-shrink:0;}
+.msg-template-wrap select{font-size:12px;}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--paper);border-radius:12px 12px 0 0;width:100%;max-width:480px;animation:slideUp .25s ease;overflow:hidden;}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.modal-handle{width:36px;height:3px;background:var(--border);border-radius:2px;margin:14px auto 0;}
+.modal-head{padding:14px 18px;border-bottom:1px solid var(--border);}
+.modal-title{font-family:'Shippori Mincho',serif;font-size:16px;font-weight:600;}
+.modal-body{padding:18px;max-height:60vh;overflow-y:auto;}
+.modal-foot{padding:14px 18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+
+/* NOTIFY */
+.notif{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:4px;font-size:12px;z-index:999;opacity:0;transition:all .3s;white-space:nowrap;max-width:90vw;text-align:center;pointer-events:none;}
+.notif.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.notif.success{background:var(--success);}
+.notif.warn{background:#c0392b;}
+
+.empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:13px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.filter-card{background:white;border:1px solid var(--border);border-radius:4px;padding:10px 6px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:12px;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+.filter-card:hover{background:var(--paper2);}
+.filter-card.active-filter{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:500;}
+.admin-catalog-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--paper2);}
+.admin-catalog-item:last-child{border-bottom:none;}
+.admin-catalog-item:hover{background:var(--paper);}
+.loc-select{font-size:11px;border:1px solid var(--border);border-radius:3px;padding:3px 6px;color:var(--ink);background:white;cursor:pointer;outline:none;}
+.loc-select:focus{border-color:var(--red);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="screen active" id="loginScreen">
+  <div class="login-inner">
+    <div class="login-logo">共 用 文 庫</div>
+    <div class="login-sub">Mansion Library</div>
+    <!-- STEP1: 部屋番号 -->
+    <div class="login-card" id="loginStep1">
+      <h2>ログイン</h2>
+      <div class="form-group">
+        <label>部屋番号</label>
+        <input type="tel" id="loginRoom" placeholder="例：1201 / 301" maxlength="4" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+      </div>
+      <button class="btn btn-primary" onclick="goToPasswordStep()">次へ</button>
+      <button class="btn btn-secondary" onclick="openModal('adminLoginModal')">管理者ログイン</button>
+    </div>
+    <!-- STEP2: パスワード（既存ユーザー） -->
+    <div class="login-card" id="loginStep2" style="display:none">
+      <h2>パスワード入力</h2>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="loginRoomLabel">—号室</div>
+      <div class="form-group">
+        <label>パスワード</label>
+        <input type="password" id="loginPw" placeholder="パスワードを入力" maxlength="8">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">ログイン</button>
+      <button class="btn btn-secondary" onclick="backToStep1()">戻る</button>
+    </div>
+    <!-- STEP3: 初回登録（新規ユーザー） -->
+    <div class="login-card" id="loginStep3" style="display:none">
+      <h2>初回登録</h2>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="registerRoomLabel">—号室</div>
+      <div style="font-size:12px;background:var(--paper2);border-radius:3px;padding:10px 12px;margin-bottom:16px;color:var(--muted);line-height:1.7">
+        パスワードを設定してください<br>
+        <strong style="color:var(--ink)">英数字8桁</strong>（例：abc12345）
+      </div>
+      <div class="form-group">
+        <label>新しいパスワード</label>
+        <input type="password" id="registerPw1" placeholder="8桁（英数字）" maxlength="8">
+      </div>
+      <div class="form-group">
+        <label>パスワード確認</label>
+        <input type="password" id="registerPw2" placeholder="もう一度入力" maxlength="8">
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()">登録してログイン</button>
+      <button class="btn btn-secondary" onclick="backToStep1()">戻る</button>
+    </div>
+    <!-- STEP4: パスワード初期化後（リセット済みユーザー） -->
+    <div class="login-card" id="loginStep4" style="display:none">
+      <h2>パスワード再設定</h2>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px" id="resetRoomLabel">—号室</div>
+      <div style="font-size:12px;background:#fdecea;border-radius:3px;padding:10px 12px;margin-bottom:16px;color:#c0392b;line-height:1.7">
+        パスワードが初期化されています。<br>新しいパスワードを設定してください。
+      </div>
+      <div class="form-group">
+        <label>新しいパスワード</label>
+        <input type="password" id="resetPw1" placeholder="8桁（英数字）" maxlength="8">
+      </div>
+      <div class="form-group">
+        <label>パスワード確認</label>
+        <input type="password" id="resetPw2" placeholder="もう一度入力" maxlength="8">
+      </div>
+      <button class="btn btn-primary" onclick="doResetPassword()">設定してログイン</button>
+      <button class="btn btn-secondary" onclick="backToStep1()">戻る</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="screen" id="appScreen">
+  <div class="app-header">
+    <div class="header-left">
+      <div class="header-title">共用文庫</div>
+      <div class="header-due" id="headerDue" style="display:none"></div>
+    </div>
+    <div class="header-user" id="headerUser" onclick="openModal('profileModal')">—</div>
+  </div>
+  <nav class="app-nav" id="appNav"></nav>
+  <div class="content">
+    <!-- BORROW -->
+    <div class="tab active" id="tab-borrow">
+      <!-- 手順ガイド -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          <div class="section-label">借り方</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">1</div>
+              <div><div style="font-size:13px;font-weight:500">ロビーまたはライブラリから本を選ぶ</div><div style="font-size:11px;color:var(--muted)">蔵書タブで場所と貸出可否を確認できます</div></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">2</div>
+              <div><div style="font-size:13px;font-weight:500">本の裏表紙のISBNバーコードをスキャン</div><div style="font-size:11px;color:var(--muted)">下のスキャンエリアにカメラを向けてください</div></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <div style="width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--paper);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">3</div>
+              <div><div style="font-size:13px;font-weight:500">1週間以内に借りた棚へ返却する</div><div style="font-size:11px;color:var(--muted)">「貸出中」タブから返却操作を行ってください</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ISBNスキャン -->
+      <div class="isbn-area" style="margin-bottom:12px">
+        <div class="barcode-icon">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <div class="isbn-label">ISBNバーコードをスキャン</div>
+        <div class="isbn-sublabel">本の裏表紙のバーコードにカメラを向ける</div>
+      </div>
+      <!-- 蔵書リストから選ぶ（補助） -->
+      <details style="margin-bottom:4px">
+        <summary style="font-size:12px;color:var(--muted);cursor:pointer;padding:10px 14px;background:white;border:1px solid var(--border);border-radius:4px;list-style:none">
+          ▸ スキャンが難しい場合は蔵書リストから選ぶ
+        </summary>
+        <div class="card" style="border-radius:0 0 4px 4px;border-top:none;margin-top:-1px">
+          <div class="card-body">
+            <div class="form-group">
+              <select id="bookSelect"><option value="">— 本を選択してください —</option></select>
+            </div>
+            <button class="btn btn-primary" onclick="borrowFromSelect()">この本を借りる</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- MY BOOKS -->
+    <div class="tab" id="tab-mybooks">
+      <div class="section-label">貸出中の本</div>
+      <div class="card"><div id="myBooksList"></div></div>
+    </div>
+
+    <!-- CATALOG -->
+    <div class="tab" id="tab-catalog">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+        <button class="filter-card active-filter" id="filterAll" onclick="setCatalogFilter('all',this)">すべて</button>
+        <button class="filter-card" id="filterLobby" onclick="setCatalogFilter('lobby',this)">🚪 ロビー棚</button>
+        <button class="filter-card" id="filterLibrary" onclick="setCatalogFilter('library',this)">📚 ライブラリ棚</button>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="タイトル・著者で検索..." oninput="renderCatalog()">
+      </div>
+      <div class="card" id="catalogArea"></div>
+    </div>
+
+    <!-- 連絡 (user) -->
+    <div class="tab" id="tab-contact">
+      <div id="userChatArea"></div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="tab" id="tab-admin">
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-num" id="statTotal">0</div><div class="stat-label">総蔵書</div></div>
+        <div class="stat-box"><div class="stat-num" id="statBorrowed">0</div><div class="stat-label">貸出中</div></div>
+        <div class="stat-box"><div class="stat-num" id="statOverdue">0</div><div class="stat-label">延滞中</div></div>
+      </div>
+      <div id="adminAlerts"></div>
+      <!-- user list or history panel -->
+      <div id="adminUserSection"></div>
+      <!-- book add -->
+      <div class="divider"></div>
+      <div class="section-label">蔵書追加</div>
+      <div class="card">
+        <div class="card-body">
+          <div class="form-group">
+            <label>ISBN自動登録</label>
+            <input type="text" id="adminISBN" placeholder="9784101010018">
+          </div>
+          <div class="form-group">
+            <label>置き場</label>
+            <select id="adminISBNLocation">
+              <option value="lobby">ロビー棚</option>
+              <option value="library">ライブラリ棚</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-sm" style="width:auto" onclick="adminAddBook()">検索・追加</button>
+          <div class="divider"></div>
+          <div class="section-label">手動追加</div>
+          <div class="form-group"><label>タイトル</label><input type="text" id="manualTitle" placeholder="タイトル"></div>
+          <div class="form-group"><label>著者</label><input type="text" id="manualAuthor" placeholder="著者名"></div>
+          <div class="form-group">
+            <label>置き場</label>
+            <select id="manualLocation">
+              <option value="lobby">ロビー棚</option>
+              <option value="library">ライブラリ棚</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary" onclick="manualAddBook()">手動で追加</button>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-label">貸出ログ</div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="log-table">
+            <thead><tr><th>貸出日</th><th>返却日</th><th>書籍名</th><th>部屋</th></tr></thead>
+            <tbody id="logBody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">ログなし</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN CATALOG (with return btn) -->
+    <div class="tab" id="tab-admincatalog">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="adminSearchInput" placeholder="タイトル・著者で検索..." oninput="renderAdminCatalog()">
+      </div>
+      <div class="card" id="adminCatalogArea"></div>
+    </div>
+
+    <!-- ADMIN CHAT -->
+    <div class="tab" id="tab-adminchat">
+      <div id="adminChatArea"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="borrowModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title" id="borrowModalTitle">—</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px" id="borrowModalMeta">—</div>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warn">⏱ 返却期限は<strong style="margin:0 4px">1週間</strong>です。</div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.8">📍 借りた棚に戻してください<br>🔖 返却時は「貸出中」タブから返却操作を行ってください</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="confirmBorrow()">借りる</button>
+      <button class="btn btn-secondary" onclick="closeModal('borrowModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="returnModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><div class="modal-title" id="returnModalTitle">返却確認</div></div>
+    <div class="modal-body"><div class="alert alert-success">✅ 棚に戻したら返却ボタンを押してください</div></div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="confirmReturn()">返却する</button>
+      <button class="btn btn-secondary" onclick="closeModal('returnModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="profileModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head" style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="modal-title">マイページ</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px" id="profileRoom">—</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-secondary btn-sm" onclick="togglePwSection()">パスワード変更</button>
+        <button class="btn btn-secondary btn-sm" onclick="doLogout()">ログアウト</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div id="profilePwSection" style="display:none;margin-bottom:12px">
+        <div class="card">
+          <div class="card-body">
+            <div class="section-label">パスワード変更</div>
+            <div class="form-group"><label>現在のパスワード</label><input type="password" id="pwOld" placeholder="現在のパスワード" maxlength="8"></div>
+            <div class="form-group"><label>新しいパスワード</label><input type="password" id="pwNew1" placeholder="8桁（英数字）" maxlength="8"></div>
+            <div class="form-group"><label>確認</label><input type="password" id="pwNew2" placeholder="もう一度入力" maxlength="8"></div>
+            <button class="btn btn-primary" onclick="changePassword()" style="margin-bottom:0">パスワードを変更する</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:6px;letter-spacing:.1em;text-transform:uppercase">貸出中の本</div>
+          <div id="profileBooks"></div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;letter-spacing:.1em;text-transform:uppercase">貸出履歴</div>
+      <div class="card"><div style="overflow-x:auto"><table class="log-table"><thead><tr><th>貸出日</th><th>返却日</th><th>書籍名</th></tr></thead><tbody id="profileLogBody"></tbody></table></div></div>
+      <div id="profileSuspend"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('profileModal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="adminLoginModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head"><div class="modal-title">管理者ログイン</div></div>
+    <div class="modal-body">
+      <div class="form-group"><label>パスワード</label><input type="password" id="adminPw" placeholder="admin123"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="doAdminLogin()">ログイン</button>
+      <button class="btn btn-secondary" onclick="closeModal('adminLoginModal')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+// ===== STATE =====
+let currentUser = null;
+let pendingBookId = null;
+let pendingReturnId = null;
+let adminChatTarget = null;
+let adminHistoryTarget = null; // room number currently viewing history
+
+const WEEK_MS = 7*24*60*60*1000;
+const ADMIN_PW = 'admin123';
+const spineColors = ['#9b2335','#2d5a8e','#2d6a4f','#7b4f9e','#b8860b','#4a6741','#8b4513'];
+
+const state = {
+  books: [
+    {id:'b001',isbn:'9784101010018',title:'坊っちゃん',author:'夏目漱石',status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location:'lobby'},
+    {id:'b002',isbn:'9784101021027',title:'羅生門・鼻',author:'芥川龍之介',status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location:'lobby'},
+    {id:'b003',isbn:'9784480091482',title:'思考の整理学',author:'外山滋比古',status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location:'library'},
+    {id:'b004',isbn:'9784478025819',title:'嫌われる勇気',author:'岸見一郎',status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location:'library'},
+    {id:'b005',isbn:'9784478028599',title:'ゼロ秒思考',author:'赤羽雄二',status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location:'lobby'},
+    {id:'b006',isbn:'9784101006031',title:'人間失格',author:'太宰治',status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location:'library'},
+  ],
+  // users: { room -> { room, registeredAt } }
+  users: {},
+  // suspended: { room -> true }
+  suspended: {},
+  // log: [{ room, title, borrowDate, returnDate, borrowTs }]
+  log: [],
+  // chats: { room -> [{from:'admin'|'user', text, ts}] }
+  chats: {},
+  // unread: { room -> { adminUnread, userUnread } }
+  unread: {},
+  // passwords: { room -> hashedish pw string }
+  passwords: {},
+  // passwordReset: { room -> true } means pw was reset by admin, must re-register
+  passwordReset: {},
+};
+
+// helpers
+function isOverdue(b){return b.status==='borrowed'&&b.dueAt&&Date.now()>b.dueAt;}
+function fmtDate(ts){const d=new Date(ts);return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;}
+function fmtTime(ts){const d=new Date(ts);return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+// valid room numbers: 1001-1036 (1F), 1101-1130 ... 1501-1530
+function isValidRoom(r){
+  const n=parseInt(r,10);
+  if(isNaN(n)||String(n)!==String(n>>>0))return false;
+  if(String(n)!==r)return false;
+  const floor=Math.floor(n/100);
+  const unit=n%100;
+  if(floor===1)return unit>=1&&unit<=136;   // 1F: 101-136 (36戸)
+  if(floor>=2&&floor<=15)return unit>=1&&unit<=30; // 2F-15F: X01-X30
+  return false;
+}
+function esc(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function scrollBot(id){setTimeout(()=>{const e=document.getElementById(id);if(e)e.scrollTop=e.scrollHeight;},50);}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function totalAdminUnread(){return Object.values(state.unread).reduce((s,u)=>s+(u.adminUnread||0),0);}
+
+// ===== LOGIN FLOW =====
+function validatePw(pw){ return /^[a-zA-Z0-9]{8}$/.test(pw); }
+
+function goToPasswordStep(){
+  const room=document.getElementById('loginRoom').value.trim();
+  if(!room){notify('部屋番号を入力してください','warn');return;}
+  if(!/^\d+$/.test(room)){notify('部屋番号は数字のみで入力してください','warn');return;}
+  if(!isValidRoom(room)){notify('存在しない部屋番号です（101〜136、201〜1530）','warn');return;}
+  if(state.suspended[room]){notify('この部屋番号は現在利用停止中です','warn');return;}
+
+  document.getElementById('loginStep1').style.display='none';
+
+  if(!state.users[room]){
+    // 新規ユーザー → 初回登録
+    document.getElementById('registerRoomLabel').textContent=room+'号室';
+    document.getElementById('registerPw1').value='';
+    document.getElementById('registerPw2').value='';
+    document.getElementById('loginStep3').style.display='block';
+  } else if(state.passwordReset[room]){
+    // PW初期化済み → 再設定
+    document.getElementById('resetRoomLabel').textContent=room+'号室';
+    document.getElementById('resetPw1').value='';
+    document.getElementById('resetPw2').value='';
+    document.getElementById('loginStep4').style.display='block';
+  } else {
+    // 既存ユーザー → PW入力
+    document.getElementById('loginRoomLabel').textContent=room+'号室';
+    document.getElementById('loginPw').value='';
+    document.getElementById('loginStep2').style.display='block';
+  }
+}
+
+function backToStep1(){
+  document.getElementById('loginStep1').style.display='block';
+  document.getElementById('loginStep2').style.display='none';
+  document.getElementById('loginStep3').style.display='none';
+  document.getElementById('loginStep4').style.display='none';
+}
+
+function doLogin(){
+  const room=document.getElementById('loginRoom').value.trim();
+  const pw=document.getElementById('loginPw').value;
+  if(state.passwords[room]!==pw){notify('パスワードが違います','warn');return;}
+  loginSuccess(room);
+}
+
+function doRegister(){
+  const room=document.getElementById('loginRoom').value.trim();
+  const pw1=document.getElementById('registerPw1').value;
+  const pw2=document.getElementById('registerPw2').value;
+  if(!validatePw(pw1)){notify('パスワードは英数字8桁で設定してください','warn');return;}
+  if(pw1!==pw2){notify('パスワードが一致しません','warn');return;}
+  state.users[room]={room,registeredAt:Date.now()};
+  state.passwords[room]=pw1;
+  loginSuccess(room);
+}
+
+function doResetPassword(){
+  const room=document.getElementById('loginRoom').value.trim();
+  const pw1=document.getElementById('resetPw1').value;
+  const pw2=document.getElementById('resetPw2').value;
+  if(!validatePw(pw1)){notify('パスワードは英数字8桁で設定してください','warn');return;}
+  if(pw1!==pw2){notify('パスワードが一致しません','warn');return;}
+  state.passwords[room]=pw1;
+  delete state.passwordReset[room];
+  loginSuccess(room);
+}
+
+function loginSuccess(room){
+  currentUser={room,isAdmin:false};
+  document.getElementById('headerUser').textContent=room+'号室';
+  backToStep1();
+  showScreen('appScreen');
+  renderAll();
+}
+
+function changePassword(){
+  const room=currentUser.room;
+  const old=document.getElementById('pwOld').value;
+  const n1=document.getElementById('pwNew1').value;
+  const n2=document.getElementById('pwNew2').value;
+  if(state.passwords[room]!==old){notify('現在のパスワードが違います','warn');return;}
+  if(!validatePw(n1)){notify('新しいパスワードは英数字8桁で設定してください','warn');return;}
+  if(n1!==n2){notify('新しいパスワードが一致しません','warn');return;}
+  state.passwords[room]=n1;
+  document.getElementById('pwOld').value='';
+  document.getElementById('pwNew1').value='';
+  document.getElementById('pwNew2').value='';
+  togglePwSection();
+  notify('パスワードを変更しました','success');
+}
+
+function togglePwSection(){
+  const el=document.getElementById('profilePwSection');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+function adminResetPw(room){
+  if(!confirm(`${room}号室のパスワードを初期化しますか？
+
+※ 初期化は利用者本人が事務所にて対面申請した場合のみ行ってください。`))return;
+  state.passwordReset[room]=true;
+  notify(`${room}号室のパスワードを初期化しました`,'success');
+  renderAll();
+}
+
+function changeBookLocation(bookId, loc){
+  const book=state.books.find(b=>b.id===bookId);
+  if(book){book.location=loc;notify(`「${book.title}」の置き場を変更しました`,'success');}
+}
+
+function doAdminLogin(){
+  if(document.getElementById('adminPw').value!==ADMIN_PW){notify('パスワードが違います','warn');return;}
+  closeModal('adminLoginModal');
+  currentUser={room:'000',isAdmin:true};
+  document.getElementById('headerUser').textContent='管理者';
+  showScreen('appScreen');
+  // activate admin tab first
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-admin').classList.add('active');
+  renderAll();
+}
+
+function doLogout(){
+  adminChatTarget=null; adminHistoryTarget=null; currentUser=null;
+  closeModal('profileModal');
+  showScreen('loginScreen');
+  document.getElementById('loginRoom').value='';
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ===== NAV =====
+function renderNav(){
+  const nav=document.getElementById('appNav');
+  if(!currentUser){nav.innerHTML='';return;}
+  let tabs;
+  if(currentUser.isAdmin){
+    tabs=[
+      {id:'admin',label:'⚙ 管理'},
+      {id:'admincatalog',label:'🗂 蔵書'},
+      {id:'adminchat',label:'📩 連絡',badge:totalAdminUnread()},
+    ];
+  } else {
+    const uUnread=(state.unread[currentUser.room]||{}).userUnread||0;
+    tabs=[
+      {id:'borrow',label:'📖 借りる'},
+      {id:'mybooks',label:'📚 貸出中'},
+      {id:'catalog',label:'🗂 蔵書'},
+      {id:'contact',label:'📩 連絡',badge:uUnread},
+    ];
+  }
+  // preserve currently active tab
+  const activeTab=document.querySelector('.tab.active');
+  const activeId=activeTab?activeTab.id.replace('tab-',''):tabs[0].id;
+  nav.innerHTML=tabs.map(t=>{
+    const badge=t.badge>0?`<span class="nav-badge">${t.badge}</span>`:'';
+    const active=t.id===activeId?' active':'';
+    return `<button class="nav-btn${active}" onclick="showTab('${t.id}',this)">${t.label}${badge}</button>`;
+  }).join('');
+}
+
+function showTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const tab=document.getElementById('tab-'+id);
+  if(tab) tab.classList.add('active');
+  if(btn) btn.classList.add('active');
+  else{const f=document.querySelector(`.nav-btn[onclick*="'${id}'"]`);if(f)f.classList.add('active');}
+  // mark read
+  if(id==='contact'&&currentUser&&!currentUser.isAdmin){
+    const u=state.unread[currentUser.room]||{};u.userUnread=0;state.unread[currentUser.room]=u;
+  }
+  if(id==='adminchat'&&adminChatTarget){
+    const u=state.unread[adminChatTarget]||{};u.adminUnread=0;state.unread[adminChatTarget]=u;
+  }
+  renderAll();
+}
+
+// ===== RENDER ALL =====
+function renderAll(){
+  if(!currentUser)return;
+  renderNav();
+  renderBorrowSelect();
+  renderMyBooks();
+  renderCatalog();
+  renderHeaderDue();
+  if(currentUser.isAdmin){
+    renderAdminStats();
+    renderAdminUserSection();
+    renderAdminCatalog();
+    renderAdminChatArea();
+    renderAdminLog();
+  } else {
+    renderUserChat();
+  }
+}
+
+// ===== HEADER DUE =====
+function renderHeaderDue(){
+  const el=document.getElementById('headerDue');
+  if(!currentUser||currentUser.isAdmin){el.style.display='none';return;}
+  const locLabel={lobby:'ロビー',library:'ライブラリ'};
+  const mine=state.books.filter(b=>b.borrowedBy===currentUser.room);
+  if(!mine.length){el.style.display='none';return;}
+  const s=mine.reduce((a,b)=>a.dueAt<b.dueAt?a:b);
+  const d=Math.ceil((s.dueAt-Date.now())/86400000);
+  el.textContent=d<0?`「${s.title}」延滞中`:`「${s.title}」返却まで${d}日`;
+  el.style.display='block';
+}
+
+// ===== BORROW SELECT =====
+function renderBorrowSelect(){
+  const sel=document.getElementById('bookSelect');
+  const avail=state.books.filter(b=>b.status==='available');
+  sel.innerHTML='<option value="">— 選択してください —</option>'+
+    avail.map(b=>`<option value="${b.id}">${b.title} / ${b.author}</option>`).join('');
+}
+
+// ===== MY BOOKS =====
+function renderMyBooks(){
+  if(!currentUser||currentUser.isAdmin)return;
+  const LOCLABEL={lobby:'ロビー',library:'ライブラリ'};
+  const mine=state.books.filter(b=>b.borrowedBy===currentUser.room);
+  const el=document.getElementById('myBooksList');
+  if(!mine.length){el.innerHTML='<div class="empty">貸出中の本はありません</div>';return;}
+  el.innerHTML=mine.map(b=>{
+    const dl=Math.ceil((b.dueAt-Date.now())/86400000);
+    const isOD=dl<0;
+    const pct=Math.min(100,((Date.now()-b.borrowedAt)/WEEK_MS)*100);
+    const fc=isOD?'progress-danger':dl<=2?'progress-warn':'progress-ok';
+    const bc=isOD?'badge-overdue':'badge-borrowed';
+    const bl=isOD?`${Math.abs(dl)}日延滞`:`残${dl}日`;
+    const col=spineColors[state.books.indexOf(b)%spineColors.length];
+    const locStr=b.location?(LOCLABEL[b.location]||'')+'棚 · ':'';
+    const bid=b.id;
+    return `<div class="mybook-item">
+      <div class="mybook-spine" style="background:${col}"></div>
+      <div class="mybook-info">
+        <div class="mybook-title">${esc(b.title)}</div>
+        <div class="mybook-due">${esc(b.author)} · ${locStr}返却予定日 ${fmtDate(b.dueAt)} <span class="badge ${bc}" style="margin-left:4px">${bl}</span></div>
+        <div class="progress-wrap"><div class="progress-fill ${fc}" style="width:${pct}%"></div></div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openReturn('${bid}')">返却</button>
+    </div>`;
+  }).join('');
+}
+
+// ===== CATALOG (user) =====
+let catalogFilter='all';
+function setCatalogFilter(f,btn){
+  catalogFilter=f;
+  document.querySelectorAll('.filter-card').forEach(b=>b.classList.remove('active-filter'));
+  if(btn)btn.classList.add('active-filter');
+  renderCatalog();
+}
+
+function renderCatalog(){
+  const q=(document.getElementById('searchInput')||{}).value?.toLowerCase()||'';
+  const books=state.books.filter(b=>{
+    const matchQ=!q||b.title.toLowerCase().includes(q)||b.author.toLowerCase().includes(q);
+    const matchL=catalogFilter==='all'||b.location===catalogFilter;
+    return matchQ&&matchL;
+  }).sort((a,b)=>a.title.localeCompare(b.title,'ja'));
+  const el=document.getElementById('catalogArea');
+  if(!el)return;
+  if(!books.length){el.innerHTML='<div class="empty">見つかりません</div>';return;}
+  const locLabel={lobby:'ロビー',library:'ライブラリ'};
+  el.innerHTML=books.map((b,i)=>{
+    const col=spineColors[i%spineColors.length];
+    const bm={available:'badge-available',borrowed:'badge-borrowed',overdue:'badge-overdue'};
+    const lm={available:'貸出可',borrowed:'貸出中',overdue:'延滞中'};
+    const locStyle={lobby:'background:#EEF4FB;color:#2d5a8e',library:'background:#ECFDF5;color:#2d6a4f'};
+    const loc=b.location?`<span style="font-size:10px;padding:2px 7px;border-radius:2px;font-weight:500;flex-shrink:0;${locStyle[b.location]||''}">${locLabel[b.location]||''}</span>`:'';
+    return `<div class="catalog-item">
+      <div class="catalog-spine" style="background:${col}"></div>
+      <div class="catalog-title">${esc(b.title)}</div>
+      <div class="catalog-author">${esc(b.author)}</div>
+      ${loc}
+      <span class="badge ${bm[b.status]||'badge-available'}">${lm[b.status]||'貸出可'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ===== ADMIN CATALOG (with return btn) =====
+function renderAdminCatalog(){
+  const q=(document.getElementById('adminSearchInput')||{}).value?.toLowerCase()||'';
+  const books=state.books.filter(b=>!q||b.title.toLowerCase().includes(q)||b.author.toLowerCase().includes(q)).sort((a,b)=>a.title.localeCompare(b.title,'ja'));
+  const el=document.getElementById('adminCatalogArea');
+  if(!el)return;
+  if(!books.length){el.innerHTML='<div class="empty">見つかりません</div>';return;}
+  const locLabel={lobby:'ロビー',library:'ライブラリ'};
+  el.innerHTML=books.map((b,i)=>{
+    const col=spineColors[i%spineColors.length];
+    const bm={available:'badge-available',borrowed:'badge-borrowed',overdue:'badge-overdue'};
+    const lm={available:'貸出可',borrowed:'貸出中',overdue:'延滞中'};
+    const returnBtn=b.status!=='available'?`<button class="btn btn-secondary btn-sm" onclick="adminReturn('${b.id}')">返却</button>`:'';
+    const locSel=`<select class="loc-select" onchange="changeBookLocation('${b.id}',this.value)"><option value="lobby"${b.location==='lobby'?' selected':''}>ロビー</option><option value="library"${b.location==='library'?' selected':''}>ライブラリ</option></select>`;
+    return '<div class="admin-catalog-item"><div class="catalog-spine" style="background:'+col+';flex-shrink:0"></div><div style="flex:1;min-width:0;overflow:hidden"><div class="catalog-title" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(b.title)+'</div><div class="catalog-author">'+esc(b.author)+'</div></div><div style="display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap">'+locSel+'<span class="badge '+(bm[b.status]||'badge-available')+'">'+(lm[b.status]||'貸出可')+'</span>'+returnBtn+'</div></div>';
+  }).join('');
+}
+
+function adminReturn(bookId){
+  const book=state.books.find(b=>b.id===bookId);
+  if(!book||book.status==='available')return;
+  const rd=fmtDate(Date.now());
+  const entry=state.log.slice().reverse().find(l=>l.title===book.title&&l.room===book.borrowedBy&&!l.returnDate);
+  if(entry)entry.returnDate=rd;
+  book.status='available';book.borrowedBy=null;book.borrowedAt=null;book.dueAt=null;
+  notify(`「${book.title}」を返却処理しました`,'success');
+  renderAll();
+}
+
+// ===== ADMIN STATS =====
+function renderAdminStats(){
+  document.getElementById('statTotal').textContent=state.books.length;
+  document.getElementById('statBorrowed').textContent=state.books.filter(b=>b.status==='borrowed'||b.status==='overdue').length;
+  document.getElementById('statOverdue').textContent=state.books.filter(b=>isOverdue(b)).length;
+  const alertsEl=document.getElementById('adminAlerts');
+  alertsEl.innerHTML=state.books.filter(b=>isOverdue(b)).map(b=>{
+    const days=Math.abs(Math.ceil((b.dueAt-Date.now())/86400000));
+    return `<div class="alert alert-danger">⚠️ 「${esc(b.title)}」が${days}日延滞中（${b.borrowedBy}号室）</div>`;
+  }).join('');
+}
+
+// ===== ADMIN USER SECTION =====
+function renderAdminUserSection(){
+  const el=document.getElementById('adminUserSection');
+  if(adminHistoryTarget){
+    renderAdminHistory(el);
+  } else {
+    renderAdminUserList(el);
+  }
+}
+
+function renderAdminUserList(el){
+  const rooms=Object.keys(state.users).sort((a,b)=>Number(a)-Number(b));
+  const aUnreadTotal=totalAdminUnread();
+  el.innerHTML=`
+    <div class="section-label">利用者管理 <span style="font-weight:400;color:var(--muted)">${rooms.length}名登録</span></div>
+    <div class="card">
+      ${!rooms.length?'<div class="empty">登録者なし</div>':
+        rooms.map(room=>{
+          const susp=!!state.suspended[room];
+          const myBooks=state.books.filter(b=>b.borrowedBy===room);
+          const aUnread=(state.unread[room]||{}).adminUnread||0;
+          const unreadBadge=aUnread>0?`<span style="background:var(--red);color:white;border-radius:50%;width:15px;height:15px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;font-weight:700">${aUnread}</span>`:'';
+          return `<div class="user-row" onclick="openAdminHistory('${room}')">
+            <div class="user-row-info">
+              <div class="user-row-name">${room}号室 ${unreadBadge} ${susp?'<span class="badge badge-stopped" style="margin-left:4px">停止中</span>':''}</div>
+              <div class="user-row-sub">貸出中 ${myBooks.length}冊 · 登録 ${fmtDate(state.users[room].registeredAt)}</div>
+            </div>
+            <div class="user-row-right" onclick="event.stopPropagation()">
+              ${susp
+                ?`<button class="btn-success-sm" onclick="liftSuspension('${room}')">復帰</button>`
+                :`<button class="btn-danger-sm" onclick="stopUser('${room}')">停止</button>`
+              }
+            </div>
+          </div>`;
+        }).join('')
+      }
+    </div>`;
+}
+
+function openAdminHistory(room){
+  adminHistoryTarget=room;
+  renderAdminUserSection();
+}
+
+function renderAdminHistory(el){
+  const room=adminHistoryTarget;
+  const susp=!!state.suspended[room];
+  const myBooks=state.books.filter(b=>b.borrowedBy===room);
+  const logs=state.log.filter(l=>l.room===room);
+  el.innerHTML=`
+    <div class="history-panel">
+      <div class="history-back" onclick="backToUserList()">← 利用者一覧に戻る</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div>
+          <div style="font-size:18px;font-family:'Shippori Mincho',serif;font-weight:600">${room}号室</div>
+          <div style="font-size:11px;color:var(--muted)">登録日 ${fmtDate(state.users[room]?.registeredAt||Date.now())}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${susp
+            ?`<button class="btn-success-sm" onclick="liftSuspension('${room}')">利用復帰</button>`
+            :`<button class="btn-danger-sm" onclick="stopUser('${room}')">利用停止</button>`
+          }
+          <button class="btn-secondary" style="display:inline-block;width:auto;padding:4px 10px;font-size:11px;margin-top:0;background:none;border:1px solid var(--border);border-radius:3px;cursor:pointer" onclick="adminResetPw('${room}')">PW初期化</button>
+        </div>
+      </div>
+      ${susp?'<div class="alert alert-danger">⛔ 現在利用停止中</div>':''}
+      <div class="section-label">貸出中の本</div>
+      <div class="card" style="margin-bottom:14px">
+        ${!myBooks.length?'<div class="empty" style="padding:12px">なし</div>':
+          myBooks.map(b=>{
+            const dl=Math.ceil((b.dueAt-Date.now())/86400000);
+            const isOD=dl<0;
+            const bl=isOD?`${Math.abs(dl)}日延滞`:`残${dl}日`;
+            const bc=isOD?'badge-overdue':'badge-borrowed';
+            return `<div style="padding:9px 14px;border-bottom:1px solid var(--paper2);display:flex;align-items:center;justify-content:space-between;font-size:12px">
+              <span style="font-family:'Shippori Mincho',serif;font-weight:600">${esc(b.title)}</span>
+              <span class="badge ${bc}">${bl}</span>
+            </div>`;
+          }).join('')
+        }
+      </div>
+      <div class="section-label">貸出履歴</div>
+      <div class="card">
+        <div style="overflow-x:auto">
+          <table class="log-table">
+            <thead><tr><th>貸出日</th><th>返却日</th><th>書籍名</th></tr></thead>
+            <tbody>
+              ${!logs.length?'<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:12px">履歴なし</td></tr>':
+                logs.slice().reverse().map(l=>`<tr>
+                  <td>${l.borrowDate}</td>
+                  <td>${l.returnDate||'<span style="color:var(--muted)">—</span>'}</td>
+                  <td>${esc(l.title)}</td>
+                </tr>`).join('')
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+}
+
+function backToUserList(){
+  adminHistoryTarget=null;
+  renderAdminUserSection();
+}
+
+function stopUser(room){
+  state.suspended[room]=true;
+  notify(`${room}号室を利用停止にしました`,'warn');
+  renderAll();
+}
+function liftSuspension(room){
+  delete state.suspended[room];
+  notify(`${room}号室の利用を復帰しました`,'success');
+  renderAll();
+}
+
+// ===== ADMIN LOG =====
+function renderAdminLog(){
+  const tbody=document.getElementById('logBody');
+  if(!state.log.length){
+    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">ログなし</td></tr>';
+    return;
+  }
+  tbody.innerHTML=state.log.slice().reverse().map(l=>`<tr>
+    <td>${l.borrowDate}</td>
+    <td>${l.returnDate||'<span style="color:var(--muted)">—</span>'}</td>
+    <td>${esc(l.title)}</td>
+    <td>${l.room}号</td>
+  </tr>`).join('');
+}
+
+// ===== ADMIN CHAT =====
+function renderAdminChatArea(){
+  const el=document.getElementById('adminChatArea');
+  if(!adminChatTarget){
+    const rooms=Object.keys(state.users).sort((a,b)=>Number(a)-Number(b));
+    el.innerHTML=`<div style="padding:14px">
+      <div class="section-label">チャット — 部屋を選択</div>
+      <div class="card">
+        ${!rooms.length?'<div class="empty">登録者なし</div>':
+          rooms.map(room=>{
+            const aUnread=(state.unread[room]||{}).adminUnread||0;
+            const badge=aUnread>0?`<span style="background:var(--red);color:white;border-radius:50%;width:15px;height:15px;font-size:9px;display:inline-flex;align-items:center;justify-content:center;font-weight:700">${aUnread}</span>`:'';
+            const msgs=state.chats[room]||[];
+            const last=msgs.length?msgs[msgs.length-1]:null;
+            return `<div class="user-row" onclick="openAdminChat('${room}')">
+              <div class="user-row-info">
+                <div class="user-row-name">${room}号室 ${badge}</div>
+                <div class="user-row-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px">${last?esc(last.text):'メッセージなし'}</div>
+              </div>
+              <span style="font-size:10px;color:var(--muted);flex-shrink:0">${last?fmtTime(last.ts):''}</span>
+            </div>`;
+          }).join('')
+        }
+      </div>
+    </div>`;
+    return;
+  }
+  const msgs=state.chats[adminChatTarget]||[];
+  el.innerHTML=`<div class="chat-outer">
+    <div class="chat-header">
+      <span class="chat-back" onclick="backToAdminChatList()">←</span>
+      ${adminChatTarget}号室
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      ${!msgs.length?'<div class="empty">メッセージはありません</div>':
+        msgs.map(m=>`<div class="chat-bubble-wrap ${m.from}">
+          <div class="chat-bubble">${esc(m.text)}</div>
+          <div class="chat-time">${fmtTime(m.ts)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="msg-template-wrap">
+      <select id="adminMsgTemplate" onchange="applyTemplate()" style="margin-bottom:0">
+        <option value="">テンプレート（任意）</option>
+        <option value="本が返ってきていません。お持ちのままではありませんか？">本が返ってきていません。お持ちのままではありませんか？</option>
+      </select>
+    </div>
+    <div class="chat-footer">
+      <textarea id="adminChatInput" placeholder="メッセージを入力..." rows="1" oninput="autoResize(this)"></textarea>
+      <button class="chat-send" onclick="sendAdminMsg()">↑</button>
+    </div>
+  </div>`;
+  scrollBot('chatMessages');
+}
+
+function openAdminChat(room){
+  adminChatTarget=room;
+  const u=state.unread[room]||{};u.adminUnread=0;state.unread[room]=u;
+  showTab('adminchat',null);
+}
+function backToAdminChatList(){adminChatTarget=null;renderAdminChatArea();}
+function applyTemplate(){
+  const sel=document.getElementById('adminMsgTemplate');
+  if(sel.value){document.getElementById('adminChatInput').value=sel.value;sel.value='';}
+}
+function sendAdminMsg(){
+  const input=document.getElementById('adminChatInput');
+  const text=input.value.trim();
+  if(!text||!adminChatTarget)return;
+  if(!state.chats[adminChatTarget])state.chats[adminChatTarget]=[];
+  state.chats[adminChatTarget].push({from:'admin',text,ts:Date.now()});
+  const u=state.unread[adminChatTarget]||{};u.userUnread=(u.userUnread||0)+1;state.unread[adminChatTarget]=u;
+  input.value='';
+  renderAdminChatArea();
+  scrollBot('chatMessages');
+  renderNav();
+}
+
+// ===== USER CHAT =====
+function renderUserChat(){
+  const el=document.getElementById('userChatArea');
+  const room=currentUser.room;
+  const msgs=state.chats[room]||[];
+  el.innerHTML=`<div class="chat-outer">
+    <div class="chat-header">管理者への連絡</div>
+    <div class="chat-messages" id="userChatMessages">
+      ${!msgs.length?'<div class="empty">メッセージはありません</div>':
+        msgs.map(m=>`<div class="chat-bubble-wrap ${m.from==='admin'?'admin':'user'}">
+          <div class="chat-bubble">${esc(m.text)}</div>
+          <div class="chat-time">${fmtTime(m.ts)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="chat-footer">
+      <textarea id="userChatInput" placeholder="メッセージを入力..." rows="1" oninput="autoResize(this)"></textarea>
+      <button class="chat-send" onclick="sendUserMsg()">↑</button>
+    </div>
+  </div>`;
+  scrollBot('userChatMessages');
+}
+
+function sendUserMsg(){
+  const input=document.getElementById('userChatInput');
+  const text=input.value.trim();
+  if(!text)return;
+  const room=currentUser.room;
+  if(!state.chats[room])state.chats[room]=[];
+  state.chats[room].push({from:'user',text,ts:Date.now()});
+  const u=state.unread[room]||{};u.adminUnread=(u.adminUnread||0)+1;state.unread[room]=u;
+  input.value='';
+  renderUserChat();
+  scrollBot('userChatMessages');
+  renderNav();
+}
+
+// ===== PROFILE =====
+function renderProfile(){
+  if(!currentUser)return;
+  document.getElementById('profileRoom').textContent = currentUser.isAdmin ? '管理者' : currentUser.room+'号室';
+  document.getElementById('profilePwSection').style.display='none';
+  const room=currentUser.room;
+  const mine=state.books.filter(b=>b.borrowedBy===room);
+  const el=document.getElementById('profileBooks');
+  if(!mine.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--muted)">現在貸出中の本はありません</div>';
+  } else {
+    el.innerHTML=mine.map(b=>{
+      const dl=Math.ceil((b.dueAt-Date.now())/86400000);
+      const col=dl<0?'#c0392b':dl<=2?'var(--warn)':'var(--success)';
+      return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--paper2);font-size:12px">
+        <span style="font-family:'Shippori Mincho',serif;font-weight:600">${esc(b.title)}</span>
+        <span style="color:${col};flex-shrink:0;margin-left:8px">返却 ${fmtDate(b.dueAt)}</span>
+      </div>`;
+    }).join('');
+  }
+  // history
+  const logs=state.log.filter(l=>l.room===room);
+  const tbody=document.getElementById('profileLogBody');
+  tbody.innerHTML=!logs.length
+    ?'<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:12px">履歴なし</td></tr>'
+    :logs.slice().reverse().map(l=>`<tr>
+      <td>${l.borrowDate}</td>
+      <td>${l.returnDate||'<span style="color:var(--muted)">—</span>'}</td>
+      <td>${esc(l.title)}</td>
+    </tr>`).join('');
+  const susp=!!state.suspended[room];
+  document.getElementById('profileSuspend').innerHTML=susp
+    ?'<div class="alert alert-danger" style="margin-top:12px">⛔ 現在利用停止中です。管理者へお問い合わせください。</div>':'';
+}
+
+// ===== BORROW / RETURN =====
+function lookupISBN(){
+  const isbn=document.getElementById('isbnInput').value.trim();
+  if(!isbn){notify('ISBNを入力してください','warn');return;}
+  const book=state.books.find(b=>b.isbn===isbn);
+  if(!book){notify('蔵書にない本です','warn');return;}
+  if(book.status!=='available'){notify('現在貸出中です','warn');return;}
+  openBorrowModal(book.id);
+}
+function borrowFromSelect(){
+  const id=document.getElementById('bookSelect').value;
+  if(!id){notify('本を選択してください','warn');return;}
+  openBorrowModal(id);
+}
+function openBorrowModal(bookId){
+  if(state.suspended[currentUser.room]){notify('利用停止中のため借りられません','warn');return;}
+  const book=state.books.find(b=>b.id===bookId);
+  pendingBookId=bookId;
+  document.getElementById('borrowModalTitle').textContent=book.title;
+  document.getElementById('borrowModalMeta').textContent=book.author;
+  openModal('borrowModal');
+}
+function confirmBorrow(){
+  const book=state.books.find(b=>b.id===pendingBookId);
+  if(!book)return;
+  book.status='borrowed';book.borrowedBy=currentUser.room;
+  book.borrowedAt=Date.now();book.dueAt=Date.now()+WEEK_MS;
+  state.log.push({room:currentUser.room,title:book.title,borrowDate:fmtDate(Date.now()),returnDate:null,borrowTs:Date.now()});
+  closeModal('borrowModal');notify(`「${book.title}」を借りました`,'success');renderAll();
+}
+function openReturn(bookId){
+  const book=state.books.find(b=>b.id===bookId);
+  pendingReturnId=bookId;
+  document.getElementById('returnModalTitle').textContent=`「${book.title}」を返却`;
+  openModal('returnModal');
+}
+function confirmReturn(){
+  const book=state.books.find(b=>b.id===pendingReturnId);
+  if(!book)return;
+  const rd=fmtDate(Date.now());
+  const entry=state.log.slice().reverse().find(l=>l.title===book.title&&l.room===currentUser.room&&!l.returnDate);
+  if(entry)entry.returnDate=rd;
+  if(isOverdue(book))delete state.suspended[currentUser.room];
+  book.status='available';book.borrowedBy=null;book.borrowedAt=null;book.dueAt=null;
+  closeModal('returnModal');notify(`「${book.title}」を返却しました`,'success');renderAll();
+}
+
+// ===== ADMIN BOOK ADD =====
+async function adminAddBook(){
+  const raw=document.getElementById('adminISBN').value.trim().replace(/[-\s]/g,'');
+  const location=document.getElementById('adminISBNLocation').value;
+  if(!raw){notify('ISBNを入力してください','warn');return;}
+  if(state.books.find(b=>b.isbn===raw)){notify('すでに登録されています','warn');return;}
+  notify('書籍情報を検索中...');
+
+  // 1) openBD メイン（日本語書籍特化・CORS対応）
+  try{
+    const res=await fetch('https://api.openbd.jp/v1/get?isbn='+raw);
+    if(res.ok){
+      const data=await res.json();
+      if(data&&data[0]&&data[0].summary){
+        const s=data[0].summary;
+        const title=s.title||'';
+        const author=s.author||'著者不明';
+        if(title){addBookToState(raw,title,author,location);return;}
+      }
+    }
+  }catch(e){console.warn('openBD failed:',e);}
+
+  // 2) Google Books フォールバック（CORS対応）
+  try{
+    const res2=await fetch('https://www.googleapis.com/books/v1/volumes?q=isbn:'+raw+'&maxResults=1');
+    if(res2.ok){
+      const data2=await res2.json();
+      if(data2.items&&data2.items.length>0){
+        const info=data2.items[0].volumeInfo;
+        const title=info.title||'';
+        const author=(info.authors||[]).join('・')||'著者不明';
+        if(title){addBookToState(raw,title,author,location);return;}
+      }
+    }
+  }catch(e){console.warn('Google Books failed:',e);}
+
+  notify('書籍情報が見つかりませんでした。手動で追加してください','warn');
+}
+function addBookToState(isbn,title,author,location){
+  state.books.push({id:'b'+Date.now(),isbn,title,author,status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location});
+  document.getElementById('adminISBN').value='';
+  notify('「'+title+'」を追加しました（'+(location==='lobby'?'ロビー棚':'ライブラリ棚')+'）','success');
+  renderAll();
+}
+function manualAddBook(){
+  const title=document.getElementById('manualTitle').value.trim();
+  const author=document.getElementById('manualAuthor').value.trim();
+  const location=document.getElementById('manualLocation').value;
+  if(!title||!author){notify('タイトルと著者を入力してください','warn');return;}
+  state.books.push({id:'b'+Date.now(),isbn:'',title,author,status:'available',borrowedBy:null,borrowedAt:null,dueAt:null,location});
+  document.getElementById('manualTitle').value='';document.getElementById('manualAuthor').value='';
+  notify(`「${title}」を追加しました（${location==='lobby'?'ロビー棚':'ライブラリ棚'}）`,'success');renderAll();
+}
+
+// ===== HELPERS =====
+setInterval(()=>{
+  state.books.forEach(b=>{if(isOverdue(b)){b.status='overdue';if(b.borrowedBy)state.suspended[b.borrowedBy]=true;}});
+  renderAll();
+},30000);
+
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='profileModal')renderProfile();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click',e=>{if(e.target===bg)bg.classList.remove('open');});
+});
+function notify(msg,type=''){
+  const el=document.getElementById('notif');
+  el.textContent=msg;el.className='notif show'+(type?' '+type:'');
+  clearTimeout(window._nt);window._nt=setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
