@@ -1303,85 +1303,110 @@ function notify(msg,type=''){
 }
 
 // ===== BARCODE SCANNER =====
-let scannerMode = null;
-let html5QrScanner = null;
+let _scannerMode = null;
+let _scanner = null;
+let _scannerBusy = false;
 
 function openScanner(mode){
-  scannerMode = mode;
+  if(_scannerBusy) return;
+  _scannerMode = mode;
   if(typeof Html5Qrcode === 'undefined'){
-    notify('スキャナーライブラリを読み込み中です。しばらくお待ちください。','warn');
+    notify('スキャナーライブラリを読み込み中です','warn');
     return;
   }
+  // 既存スキャナーをクリア
+  const readerEl = document.getElementById('html5qr-reader');
+  readerEl.innerHTML = '';
   document.getElementById('scannerOverlay').classList.add('open');
-  // 少し待ってからDOMが安定した後に初期化
+
   setTimeout(()=>{
-    html5QrScanner = new Html5Qrcode('html5qr-reader');
-    const config = {
-      fps: 10,
-      qrbox: { width: 280, height: 100 },
-      aspectRatio: 1.5,
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-      ]
-    };
-    html5QrScanner.start(
-      { facingMode: 'environment' },
-      config,
-      (decodedText) => {
-        const isbn = decodedText.replace(/[^0-9X]/gi,'');
-        const mode = scannerMode; // モードを先に保存
-        closeScanner();           // スキャナーを閉じる
-        scannerMode = mode;       // closeで消えないよう再セット
-        handleScannedISBN(isbn);
+    _scanner = new Html5Qrcode('html5qr-reader');
+    _scanner.start(
+      { facingMode:'environment' },
+      {
+        fps: 15,
+        qrbox: { width:260, height:90 },
+        aspectRatio: 1.777,
+        formatsToSupport:[
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+        ]
       },
-      (err) => { /* スキャン中エラーは無視 */ }
-    ).catch(err => {
-      console.error('Camera start failed:', err);
-      closeScanner();
-      notify('カメラの起動に失敗しました。カメラのアクセス許可を確認してください。','warn');
+      (text) => {
+        if(_scannerBusy) return;
+        _scannerBusy = true;
+        const isbn = text.replace(/[^0-9Xx]/g,'').toUpperCase();
+        const capturedMode = _scannerMode; // 読み取り時点のmodeを確定保存
+        // スキャナーを止めてから処理
+        _scanner.stop().then(()=>{
+          _scanner.clear();
+          _scanner = null;
+          document.getElementById('scannerOverlay').classList.remove('open');
+          // 500ms後に処理（iOS UIが落ち着くのを待つ）
+          setTimeout(()=>{
+            _scannerBusy = false;
+            _applyScannedISBN(isbn, capturedMode);
+          }, 500);
+        }).catch(()=>{
+          _scanner = null;
+          document.getElementById('scannerOverlay').classList.remove('open');
+          setTimeout(()=>{
+            _scannerBusy = false;
+            _applyScannedISBN(isbn, capturedMode);
+          }, 500);
+        });
+      },
+      ()=>{ /* フレームごとのエラーは無視 */ }
+    ).catch(err=>{
+      document.getElementById('scannerOverlay').classList.remove('open');
+      _scanner = null;
+      notify('カメラを起動できませんでした。アクセス許可を確認してください','warn');
     });
-  }, 100);
+  }, 200);
 }
 
 function closeScanner(){
   document.getElementById('scannerOverlay').classList.remove('open');
-  if(html5QrScanner){
-    html5QrScanner.stop().catch(()=>{});
-    html5QrScanner.clear();
-    html5QrScanner = null;
+  if(_scanner){
+    _scanner.stop().catch(()=>{});
+    _scanner.clear();
+    _scanner = null;
   }
+  _scannerBusy = false;
 }
 
-function handleScannedISBN(isbn){
-  const mode = scannerMode;
-  // スキャナーを閉じた後、DOMが落ち着いてから処理する
-  setTimeout(()=>{
-    if(mode === 'borrow'){
-      const book = state.books.find(b => b.isbn === isbn);
-      if(!book){
-        notify('蔵書に登録されていない本です（ISBN: '+isbn+'）','warn');
-      } else if(book.status !== 'available'){
-        notify('「'+book.title+'」は現在貸出中です','warn');
-      } else {
-        openBorrowModal(book.id);
-      }
-    } else if(mode === 'admin'){
-      // 管理者タブが非表示でもinputは存在するので直接セット
-      const input = document.getElementById('adminISBN');
-      if(input){
-        input.value = isbn;
-        // 入力欄を視覚的にフラッシュして確認させる
-        input.style.borderColor = 'var(--success)';
-        setTimeout(()=>{ input.style.borderColor = ''; }, 1500);
-      }
-      notify('ISBN読取完了：'+isbn+'　→「検索・追加」を押してください');
+function _applyScannedISBN(isbn, mode){
+  if(mode === 'borrow'){
+    const book = state.books.find(b => b.isbn === isbn);
+    if(!book){
+      // 通知を長めに表示
+      const el = document.getElementById('notif');
+      el.textContent = '「'+isbn+'」は蔵書にありません';
+      el.className = 'notif show warn';
+      clearTimeout(window._nt);
+      window._nt = setTimeout(()=>el.classList.remove('show'), 4000);
+    } else if(book.status !== 'available'){
+      notify('「'+book.title+'」は現在貸出中です','warn');
+    } else {
+      openBorrowModal(book.id);
     }
-  }, 300);
+  } else if(mode === 'admin'){
+    const input = document.getElementById('adminISBN');
+    if(input){
+      input.value = isbn;
+      input.style.borderColor = '#2d6a4f';
+      input.style.boxShadow = '0 0 0 2px rgba(45,106,79,0.2)';
+      setTimeout(()=>{
+        input.style.borderColor = '';
+        input.style.boxShadow = '';
+      }, 2000);
+      notify('読取完了 '+isbn+'　→「検索・追加」を押してください', 'success');
+    }
+  }
 }
 </script>
 <!-- SCANNER OVERLAY -->
