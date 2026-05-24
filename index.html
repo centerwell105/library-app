@@ -1333,8 +1333,10 @@ function openScanner(mode){
       { facingMode: 'environment' },
       config,
       (decodedText) => {
-        const isbn = decodedText.replace(/[-\s]/g,'');
-        closeScanner();
+        const isbn = decodedText.replace(/[^0-9X]/gi,'');
+        const mode = scannerMode; // モードを先に保存
+        closeScanner();           // スキャナーを閉じる
+        scannerMode = mode;       // closeで消えないよう再セット
         handleScannedISBN(isbn);
       },
       (err) => { /* スキャン中エラーは無視 */ }
@@ -1356,19 +1358,30 @@ function closeScanner(){
 }
 
 function handleScannedISBN(isbn){
-  if(scannerMode === 'borrow'){
-    const book = state.books.find(b => b.isbn === isbn);
-    if(!book){
-      notify('蔵書に登録されていない本です（ISBN: '+isbn+'）','warn');
-    } else if(book.status !== 'available'){
-      notify('「'+book.title+'」は現在貸出中です','warn');
-    } else {
-      openBorrowModal(book.id);
+  const mode = scannerMode;
+  // スキャナーを閉じた後、DOMが落ち着いてから処理する
+  setTimeout(()=>{
+    if(mode === 'borrow'){
+      const book = state.books.find(b => b.isbn === isbn);
+      if(!book){
+        notify('蔵書に登録されていない本です（ISBN: '+isbn+'）','warn');
+      } else if(book.status !== 'available'){
+        notify('「'+book.title+'」は現在貸出中です','warn');
+      } else {
+        openBorrowModal(book.id);
+      }
+    } else if(mode === 'admin'){
+      // 管理者タブが非表示でもinputは存在するので直接セット
+      const input = document.getElementById('adminISBN');
+      if(input){
+        input.value = isbn;
+        // 入力欄を視覚的にフラッシュして確認させる
+        input.style.borderColor = 'var(--success)';
+        setTimeout(()=>{ input.style.borderColor = ''; }, 1500);
+      }
+      notify('ISBN読取完了：'+isbn+'　→「検索・追加」を押してください');
     }
-  } else if(scannerMode === 'admin'){
-    document.getElementById('adminISBN').value = isbn;
-    notify('ISBN読取完了：'+isbn);
-  }
+  }, 300);
 }
 </script>
 <!-- SCANNER OVERLAY -->
