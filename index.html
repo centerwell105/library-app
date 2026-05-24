@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>共用文庫</title>
-<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;800&family=Zen+Kaku+Gothic+New:wght@300;400;500&display=swap');
 :root {
@@ -185,15 +185,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--red);}
 .filter-card:hover{background:var(--paper2);}
 .filter-card.active-filter{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:500;}
 /* SCANNER */
-.scanner-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:500;flex-direction:column;align-items:center;justify-content:center;}
+.scanner-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:16px;}
 .scanner-overlay.open{display:flex;}
-.scanner-video-wrap{position:relative;width:100%;max-width:400px;}
-.scanner-video-wrap video{width:100%;border-radius:8px;display:block;}
-.scanner-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:70%;aspect-ratio:3/1;border:2px solid #fff;border-radius:4px;box-shadow:0 0 0 9999px rgba(0,0,0,.5);}
-.scanner-line{position:absolute;left:0;right:0;height:2px;background:var(--red);animation:scanline 1.5s ease-in-out infinite alternate;top:0;}
-@keyframes scanline{from{top:4px;}to{top:calc(100% - 4px);}}
-.scanner-label{color:white;font-size:13px;margin-top:16px;letter-spacing:.05em;}
-.scanner-cancel{margin-top:20px;color:#aaa;font-size:13px;cursor:pointer;padding:10px 24px;border:1px solid #555;border-radius:4px;}
+.scanner-video-wrap{width:100%;max-width:400px;}
+#html5qr-reader{width:100%;}
+#html5qr-reader video{border-radius:8px;}
+/* html5-qrcode が追加するUIを非表示 */
+#html5qr-reader img[alt="Info icon"]{display:none!important;}
+#html5qr-reader__dashboard_section_csr span{display:none!important;}
+#html5qr-reader__filescan_input{display:none!important;}
+#html5qr-reader__dashboard_section_swaplink{display:none!important;}
+.scanner-label{color:white;font-size:13px;margin-top:16px;letter-spacing:.05em;text-align:center;}
+.scanner-cancel{margin-top:20px;color:#aaa;font-size:13px;cursor:pointer;padding:12px 32px;border:1px solid #555;border-radius:4px;background:none;}
 .scanner-cancel:hover{color:white;border-color:#aaa;}
 .admin-catalog-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--paper2);}
 .admin-catalog-item:last-child{border-bottom:none;}
@@ -1300,114 +1303,80 @@ function notify(msg,type=''){
 }
 
 // ===== BARCODE SCANNER =====
-let scannerMode = null; // 'borrow' or 'admin'
-let codeReader = null;
-let scannerStream = null;
+let scannerMode = null;
+let html5QrScanner = null;
 
-async function openScanner(mode){
+function openScanner(mode){
   scannerMode = mode;
-  document.getElementById('scannerOverlay').classList.add('open');
-  const video = document.getElementById('scannerVideo');
-
-  try{
-    // ZXingが読み込まれているか確認
-    if(typeof ZXing === 'undefined'){
-      notify('スキャナーライブラリを読み込み中...しばらくお待ちください','warn');
-      closeScanner();
-      return;
-    }
-    codeReader = new ZXing.BrowserMultiFormatReader();
-    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
-    // 背面カメラを優先
-    const backCamera = devices.find(d =>
-      /back|rear|environment/i.test(d.label)
-    ) || devices[devices.length - 1];
-    const deviceId = backCamera ? backCamera.deviceId : undefined;
-
-    await codeReader.decodeFromVideoDevice(deviceId, video, (result, err) => {
-      if(result){
-        const isbn = result.getText().replace(/[-\s]/g,'');
-        closeScanner();
-        if(mode === 'borrow'){
-          // 借りる：そのままISBN検索して貸出モーダルへ
-          const book = state.books.find(b => b.isbn === isbn);
-          if(!book){
-            notify('蔵書に登録されていない本です','warn');
-          } else if(book.status !== 'available'){
-            notify('「'+book.title+'」は現在貸出中です','warn');
-          } else {
-            openBorrowModal(book.id);
-          }
-        } else if(mode === 'admin'){
-          // 管理者：ISBN入力欄にセット
-          document.getElementById('adminISBN').value = isbn;
-          notify('ISBN読取完了：'+isbn);
-        }
-      }
-      // errはフレームごとに発生するため無視
-    });
-  } catch(e){
-    console.error('Scanner error:', e);
-    // ZXing失敗時はカメラ直接起動にフォールバック
-    closeScanner();
-    fallbackCameraInput(mode);
+  if(typeof Html5Qrcode === 'undefined'){
+    notify('スキャナーライブラリを読み込み中です。しばらくお待ちください。','warn');
+    return;
   }
+  document.getElementById('scannerOverlay').classList.add('open');
+  // 少し待ってからDOMが安定した後に初期化
+  setTimeout(()=>{
+    html5QrScanner = new Html5Qrcode('html5qr-reader');
+    const config = {
+      fps: 10,
+      qrbox: { width: 280, height: 100 },
+      aspectRatio: 1.5,
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+      ]
+    };
+    html5QrScanner.start(
+      { facingMode: 'environment' },
+      config,
+      (decodedText) => {
+        const isbn = decodedText.replace(/[-\s]/g,'');
+        closeScanner();
+        handleScannedISBN(isbn);
+      },
+      (err) => { /* スキャン中エラーは無視 */ }
+    ).catch(err => {
+      console.error('Camera start failed:', err);
+      closeScanner();
+      notify('カメラの起動に失敗しました。カメラのアクセス許可を確認してください。','warn');
+    });
+  }, 100);
 }
 
 function closeScanner(){
   document.getElementById('scannerOverlay').classList.remove('open');
-  if(codeReader){
-    try{ codeReader.reset(); }catch(e){}
-    codeReader = null;
-  }
-  const video = document.getElementById('scannerVideo');
-  if(video.srcObject){
-    video.srcObject.getTracks().forEach(t => t.stop());
-    video.srcObject = null;
+  if(html5QrScanner){
+    html5QrScanner.stop().catch(()=>{});
+    html5QrScanner.clear();
+    html5QrScanner = null;
   }
 }
 
-// ZXingが使えない場合のフォールバック：file inputでカメラを起動
-function fallbackCameraInput(mode){
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
-  input.capture = 'environment';
-  input.style.display = 'none';
-  document.body.appendChild(input);
-  input.onchange = async () => {
-    const file = input.files[0];
-    if(!file){ document.body.removeChild(input); return; }
-    if(typeof ZXing !== 'undefined'){
-      try{
-        const reader = new ZXing.BrowserMultiFormatReader();
-        const url = URL.createObjectURL(file);
-        const result = await reader.decodeFromImageUrl(url);
-        URL.revokeObjectURL(url);
-        const isbn = result.getText().replace(/[-\s]/g,'');
-        if(mode === 'borrow'){
-          const book = state.books.find(b => b.isbn === isbn);
-          if(!book) notify('蔵書に登録されていない本です','warn');
-          else if(book.status !== 'available') notify('「'+book.title+'」は現在貸出中です','warn');
-          else openBorrowModal(book.id);
-        } else {
-          document.getElementById('adminISBN').value = isbn;
-          notify('ISBN読取完了：'+isbn);
-        }
-      }catch(e){ notify('バーコードを読み取れませんでした','warn'); }
+function handleScannedISBN(isbn){
+  if(scannerMode === 'borrow'){
+    const book = state.books.find(b => b.isbn === isbn);
+    if(!book){
+      notify('蔵書に登録されていない本です（ISBN: '+isbn+'）','warn');
+    } else if(book.status !== 'available'){
+      notify('「'+book.title+'」は現在貸出中です','warn');
+    } else {
+      openBorrowModal(book.id);
     }
-    document.body.removeChild(input);
-  };
-  input.click();
+  } else if(scannerMode === 'admin'){
+    document.getElementById('adminISBN').value = isbn;
+    notify('ISBN読取完了：'+isbn);
+  }
 }
 </script>
 <!-- SCANNER OVERLAY -->
 <div class="scanner-overlay" id="scannerOverlay">
   <div class="scanner-video-wrap">
-    <video id="scannerVideo" playsinline autoplay muted></video>
-    <div class="scanner-frame"><div class="scanner-line"></div></div>
+    <div id="html5qr-reader" style="width:100%;border-radius:8px;overflow:hidden;background:#000"></div>
   </div>
-  <div class="scanner-label">バーコードをスキャン枠に合わせてください</div>
+  <div class="scanner-label" id="scannerLabel">バーコードをカメラに向けてください</div>
   <div class="scanner-cancel" onclick="closeScanner()">キャンセル</div>
 </div>
 </body>
